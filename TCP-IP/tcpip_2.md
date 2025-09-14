@@ -162,3 +162,169 @@ A host in network 145.14.0.0 in Figure 6.11 has a packet to send to the host wit
     | subnet address | Next-hop address | Interface |
     |:--------------:|:----------------:|:---------:|
     | 0.0.0.0        | default router   | m4        |
+
+<br>
+- Simplified forwarding module in classless address
+<br><br>
+
+![fig_6_12](./src/fig6_12.png)
+
+1. 목적지 주소 수신
+    - 라우터가 IP 패킷을 받으면 목적지 주소를 확인
+
+2. 라우팅 테이블 검색
+    - Classless에서는 라우팅 테이블에 ***IP/prefix*** 형태로 항목이 저장되어 있음
+
+3. Longest Prefix Match
+    - 여러 엔트리가 매칭되면 ***가장 긴 prefix(/n)***, 가장 구체적인 네트워크를 선택
+
+4. 포워딩 결정
+    - 선택된 엔트리에서 next-hop 주소와 출력 인터페이스를 꺼냄
+
+5. Default route (0.0.0.0/0)
+    - 어떤 엔트리에도 매칭되지 않으면, default route로 전달
+
+<br>
+
+[Figure 6.13]
+
+![fig_6_13](./src/fig6_13.png)
+
+- ex 6.7 <br>
+Make a routing table for router R1 using the configuration in Figure 6.13.
+
+    | Mask    | Network address | Next-hop      | Interface |
+    |:-------:|:---------------:|:-------------:|:---------:|
+    | /26     | 180.70.65.192   | ---           | m2        |
+    | /25     | 180.70.65.128   | ---           | m0        |
+    | /24     | 201.4.22.0      | ---           | m3        |
+    | /22     | 201.4.16.0      | ---           | m1        |
+    | Default | Default         | 180.70.65.200 | m2        | 
+
+<br>
+
+- ex 6.8 <br>
+Show the forwarding process if a packet arrives at R1 in Figure 6.13 with the destination address 180.70.65.140.
+
+    | Mask    | Network address | Next-hop      | Interface |
+    |:-------:|:---------------:|:-------------:|:---------:|
+    | /25     | 180.70.65.135   | ---           | m0        |
+
+    => 시작 주소가 180.70.65.192 이므로 포함 x <br>
+
+
+<br>
+
+- ex 6.9 <br>
+Show the forwarding process if a packet arrives at R1 in Figure 6.13 with the destination address 201.4.22.35.
+
+    | Mask    | Network address | Next-hop      | Interface |
+    |:-------:|:---------------:|:-------------:|:---------:|
+    | /24     | 201.4.22.0      | ---           | m3        |
+
+<br>
+
+- ex 6.10 <br>
+Show the forwarding process if a packet arrives at R1 in Figure 6.13 with the destination address 18.24.32.78.
+
+    | Mask    | Network address | Next-hop      | Interface |
+    |:-------:|:---------------:|:-------------:|:---------:|
+    | Default | Default         | 180.70.65.200 | m2        | 
+
+<br>
+
+- ex 6.11 <br>
+Now let us give a different type of example. Can we find the configuration of a router if we know only its routing table? The routing table for router R1 is given in Table 6.2. Can we draw its topology?
+
+
+    ![table6_2](./src/table6_2.png)
+
+    - R1 라우터에 m0, m1, m2 인터페이스가 연결되어 있을 것 (같은 네트워크)
+    - m0 인터페이스를 따라가면, 외부 인터넷망과 연결되어 있을 것 (Default router)
+    - m1 인터페이스를 따라가면, 190.17.0.0/16 네트워크와 130.4.8.0/24 네트워크가 다른 라우터로 인해 간접적으로 연결되어 있을 것
+    - m2 인터페이스를 따라가면, 180.14.0.0/16 네트워크와 140.6.12.64/26 네트워크가 다른 라우터로 인해 간접적으로 연결되어 있을 것
+    <br>
+
+    [guessed topology]
+
+    ![guessed_topology](./src/guessed_topo.png)
+
+    <br>
+
+[Figure 6.15]
+
+![address_aggregation](./src/addr_aggr.png)
+
+
+    Address aggregation (주소 집약)
+    - 140.24.7.0/26 ~ 140.24.7.255/26을 140.24.7.0/24 네트워크 하나로 요약
+    - 테이블이 작아지고, 탐색이 단순해져서 성능이 올라감
+
+<br>
+
+[Figure 6.16]
+
+![Longest_mask_matching](./src/lmm.png)
+
+    Longest Mask Matching ()
+    - 하나의 목적지 주소가 여러 prefix 엔트리와 동시에 매칭될 수 있을 때, 가장 긴 prefix, 즉 가장 구체적인 네트워크가 선택되는 규칙
+
+<br>
+
+- ex 6.12 <br>
+As an example of hierarchical routing, let us consider Figure 6.17.
+
+    > A regional ISP is granted 16,384 addresses starting from 120.14.64.0. 
+    - 지역 ISP가 120.14.64.0부터 시작하는 주소 16,384개(2^14)를 받음
+
+    <br>
+
+    > The regional ISP has decided to divide this block into 4 subblocks, each with 4096 addresses.
+    - 지역 ISP는 이 블록을 각 4096개의 주소를 가지는 4개의 서브블록으로 나누기로 함
+
+    <br>
+
+    > Three of these subblocks are assigned to three local ISPs, the second subblock is reserved for future use. 
+    - 그 중 3개의 서브블록은 local ISP에 할당됐고, 두 번째 서브블록은 나중에 사용하기 위해 reserved
+
+    <br>
+    
+    > Note that the mask for each block is /20 because the original block with mask /18 is divided into 4 blocks.
+    - 주의할 점, 원래 블록은 /18 블록이었는데, 4개로 나눠서 /20이 됨
+
+<br>
+
+[Figure 6.17]
+
+![Figure_6_17](./src/fig6_17.png)
+
+<br><br>
+
+- ex 6.13 <br>
+    Figure 6.18 shows a simple example of searching in a routing table using the longest match algorithm. Although there are some more efficient algorithms today, the principle is the same. 
+
+    <br>
+
+    > When the forwarding algorithm gets the destination address of the packet, it needs to delve into the mask column. 
+    - forwarding algorithm이 패킷의 목적지 주소를 받으면, 테이블의 mask column 확인
+
+    <br>
+
+    > For each entry, it needs to apply the mask to find the destination network address. It then needs to check the network addresses in the table until it finds the match.
+    - 각 엔트리의 mask를 적용해서 목적지 주소를 구하고, 테이블에 있는 네트워크 주소들과 비교하여 일치할 때까지 확인
+    
+    <br>
+
+    > The router then extracts the next hop address and the interface number to be delivered to the ARP protocol for delivery of the packet to the next hop.
+    - 일치하는 항목을 찾으면, 라우터는 해당 엔트리에서 next hop address와 interface number를 꺼내 ARP protocol에 전달하고 ARP가 이를 통해 패킷을 next hop에 전달
+
+<br>
+
+[Figure 6.18]
+
+![Fig_6_18](./src/fig6_18.png)
+
+<br><br>
+
+- ex 6.14 <br>
+Figure 6.19 shows a simple example of using a label to access a switching table. Since the labels are used as the index to the table, finding the information in the table is immediate.
