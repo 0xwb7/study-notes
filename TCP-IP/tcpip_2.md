@@ -328,3 +328,76 @@ As an example of hierarchical routing, let us consider Figure 6.17.
 
 - ex 6.14 <br>
 Figure 6.19 shows a simple example of using a label to access a switching table. Since the labels are used as the index to the table, finding the information in the table is immediate.
+<br>
+
+[Figure 6.19]
+
+![Fig_6_19](./src/fig6_19.png)
+![Fig_6_20](./src/fig6_20.png)
+![Fig_6_21](./src/fig6_21.png)
+
+
+- 메모리값 참조해서 바로 찾아감 (속도 빠름)
+- MPLS 헤더에는 Label 값(20비트), QoS 관련 3비트, S 비트(Stack indicator), TTL 값 등이 들어감
+- MPLS의 확장 기능으로, 하나의 패킷이 여러 개의 라벨을 스택(stack) 형태로 가질 수 있음
+- top 라벨이 현재 스위칭 기준이 되고, 패킷이 라우터를 지날 때 pop하거나 push할 수 있음
+- 라벨 스택을 써서 다층 구조 라우팅도 가능
+
+## 라우터 구조
+
+### 라우터의 주요 구성 요소
+
+![Fig_6_22](./src/fig6_22.png)
+
+- 입력 포트 (Input port)
+    - 패킷이 들어오는 지점. 여기서 패킷의 헤더를 검사하고, 적절한 출력 포트를 찾기 위한 라우팅/포워딩 작업을 시작
+
+- 출력 포트 (Output port)
+    - 선택된 경로로 패킷을 내보내는 부분. 큐잉(buffering), 스케줄링(패킷 전송 순서 제어)이 이루어짐
+
+- 스위칭 패브릭 (Switching fabric)
+    - 라우터 내부에서 입력 포트와 출력 포트를 연결하는 고속 스위칭 구조.
+
+
+### 입력 포트
+
+![Fig_6_23](./src/fig6_23.png)
+
+- 목적지 주소를 읽음
+- 포워딩 테이블을 검색하거나, 필요시 라우팅 테이블로 접근
+- 라벨 스위칭의 경우 라벨을 바로 테이블 인덱스로 활용
+- 패킷을 내부 스위칭 패브릭으로 전달
+
+### 츌력 포트
+
+![Fig_6_24](./src/fig6_24.png)
+
+- 스위칭 패브릭을 통해 전달된 패킷을 받아 외부 링크로 내보냄
+- 큐(Queue) 관리: 패킷이 몰릴 경우 대기열 생성
+- 스케줄링: 어떤 패킷을 먼저 내보낼지 결정
+
+### 스위칭 패브릭
+
+![Fig_6_25](./src/fig6_25.png)
+- Crossbar: 단순한 교차 연결 구조. 병목이 적지만, 스위치 크기가 커질수록 복잡해짐
+
+<br>
+
+![Fig_6_26](./src/fig6_26.png)
+- Banyan Switch: 다단계 경로를 가진 구조. 소규모 스위치를 여러 층 겹쳐 큰 네트워크를 구성
+- inter blocking 발생 가능 (same destination or difference destination)
+
+<br>
+
+[Figure 6.27] <br>
+**Examples of routing in a banyan switch**
+
+![Fig_6_27](./src/fig6_27.png)
+
+<br>
+
+![Fig_6_28](./src/fig6_28.png)
+- Batcher-Banyan Switch: Batcher 정렬 네트워크와 Banyan을 결합해 패킷 충돌을 줄이고, 고속 처리를 지원
+- 내부 블로킹이 발생하지 않도록 정렬
+- trap module: 같은 목적지로 가는 것들끼리 충돌 일으키지 않게 대기시킴 (정렬)
+
