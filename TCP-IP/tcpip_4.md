@@ -120,8 +120,99 @@ IP 통신을 할 때, 두 가지 주소 체계가 필요
 
     - 두 라우터가 같은 네트워크 세그먼트로 연결되어 있을 때, 한 라우터가 다른 라우터로 IP 패킷을 전달해야 하는 경우
     - 라우터도 똑같이 상대 라우터의 IP만 알고 있을 수 있으므로, ARP로 MAC 주소를 알아내야 함
-    
+
+<br><br>
+
+### Proxy ARP
+- 원래 ARP는 같은 네트워크 안에서만 동작 (A가 B의 IP 주소를 알고 있어도, B가 다른 네트워크(서브넷)에 있으면 직접 ARP로 MAC을 알아낼 수 없음)
+
+- 이때, 라우터가 대신 해당 IP 받아주는 방식이 Proxy ARP
+
+    ![Proxy_arp](./src/proxy_arp.png)
+
+<br>
+
 
 ## ATM ARP
+Ethernet에서는 브로드캐스트가 가능해서 ARP Request 뿌리면 통신하려는 장비의 MAC 주소를 알 수 있지만, ATM 네트워크는 Point to Point 방식이라 브로드캐스트가 불가능하다. <br><br>
+따라서 특정 IP를 가진 장비의 MAC 주소를 저장할 중앙 서버가 필요한데, 이를 ATMARP Server라고 한다.
+<br>
 
-## ATP Package
+### 동작 방식
+
+1. PVC (Permanent Virtual Circuit) 환경
+- 라우터와 ATMARP 서버 사이에 영구 가상회선(PVC)이 이미 설정돼 있음
+- 호스트가 매핑을 원할 때, ATMARP 서버에 요청 → 서버가 응답으로 ATM 주소 알려줌
+- Inverse Request/Reply 메시지를 이용해 "ATM 주소 ↔ IP 주소" 바인딩 가능
+
+
+2. SVC (Switched Virtual Circuit) 환경
+- 동적으로 가상회선을 설정
+- 호스트가 ATMARP 서버에 Request를 보내서 매핑 요청
+- 서버는 응답(Reply)으로 IP ↔ ATM 주소를 알려줌
+- 동시에 서버는 자신의 매핑 테이블을 갱신(Inverse ARP 이용)
+
+
+### ATMARP Packet
+
+![ATMARP_Packet](./src/atmarp.png)
+
+- Ethernet ARP와 구조 유사하지만, ATM 주소 필드가 더 김
+- PVC/SVC 상황에 따라 Request / Reply / Inverse Request / Inverse Reply 메시지를 사용
+
+### PVC
+
+![PVC](./src/pvc.png)
+
+- Inverse ARP: PVC가 이미 연결돼 있으므로, 이 회선이 **어느 IP ↔ 어느 ATM 주소**인지 매핑
+
+### SVC
+
+![SVC](./src/svc.png)
+
+- 호스트가 서버에 IP 주소를 주고 ATM 주소 알려달라 요청(Request)
+- 서버가 매핑 테이블에서 찾아서 Reply
+- 동시에 서버도 Inverse ARP를 이용해 자기 매핑 테이블 업데이트
+
+### LIS
+
+![LIS](./src/LIS.png)
+
+- ATM 네트워크를 여러 개의 Logical IP Subnet(LIS)로 분할
+- 각 LIS는 자체 ATMARP 서버를 가져야 함
+- 같은 LIS 안에서는 ATMARP로 직접 주소 매핑 후 통신
+- 다른 LIS 간 통신은 반드시 라우터를 경유
+
+
+## ARP Package
+
+![arp_compo](./src/arp_compo.png)
+
+- Cache Table (ARP Cache)
+    - IP ↔ MAC 주소 매핑을 저장하는 테이블
+    - 각 엔트리는 상태(State)와 시간(Time-out)을 가짐
+    - 상태 예시:
+        - RESOLVED (R): 매핑 완료, MAC 주소 있음
+        - PENDING (P): 요청 보냈지만 아직 응답 없음
+        - FREE: 비어 있음 
+
+- Queues
+    - 목적지 MAC 주소를 아직 모를 때, 그 IP로 가야 할 패킷을 잠시 저장
+    - ARP가 MAC 주소를 알아내면, 큐에 있던 패킷을 전송
+
+- Output Module
+    - IP 계층으로부터 패킷을 받아옴
+    - 캐시를 확인
+        - 있으면 → 바로 MAC 주소 넣어서 데이터링크 계층으로 보냄
+        - 없으면 → 캐시에 “PENDING”으로 추가하고, ARP Request 전송 + 큐에 패킷 저장
+
+- Input Module
+    - 수신한 ARP 패킷(Request/Reply)을 처리
+    - 캐시 업데이트 (PENDING → RESOLVED로 바꾸고, 시간 초기화)
+    - 대기 큐에 있는 패킷들을 전송
+
+- Cache-Control Module
+    - 캐시 엔트리들의 타이머 관리
+    - 일정 시간이 지나면 엔트리를 삭제하거나(PENDING 상태 오래되면 실패 처리) ICMP 에러를 상위 계층에 전달
+
+
