@@ -198,3 +198,7 @@
 - 셀렉션(selection): 릴레이션의 튜플을 추출하기 위한 연산
 
     ![select](./src/select.png)
+
+<br>
+
+- 프로젝션(projection): 릴레이션의 속성을 추출하기 위한 단항 연산자
