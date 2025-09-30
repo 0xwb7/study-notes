@@ -244,3 +244,13 @@
 - 다른 연산과는 달리 릴레이션 속성값의 집합으로 연산을 수행
 
     ![Division](./src/divison.png)
+
+
+---
+<br>
+
+ [정리 잘 되어있는 블로그 발견] 
+ 
+ 
+ https://inpa.tistory.com/entry/DB-%F0%9F%93%9A-%EA%B4%80%EA%B3%84-%EB%8C%80%EC%88%98-%EA%B4%80%EA%B3%84-%ED%95%B4%EC%84%9D-SQL-%F0%9F%95%B5%EF%B8%8F-%EC%A0%95%EB%A6%AC
+
